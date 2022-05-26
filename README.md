@@ -231,7 +231,7 @@ private fun getPermissions() {
 }
 ```
 
-앨범 또는 카메라를 선택한다. 
+앨범 또는 카메라를 선택한다.
 다음 ResultFragment 에서 무엇을 선택했는지 알기 위해 navArgs을 이용한다.
 ```kotlin
 override fun onViewCreated(view: View, savedInstanceState: Bundle?) {  
