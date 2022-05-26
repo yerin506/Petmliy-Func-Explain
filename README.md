@@ -147,7 +147,7 @@ override fun getWeatherInfo(
 }
 ```
 
-#### HomeFragment.kt 날씨 띄우기
+#### HomeFragment.kt에 날씨 띄우기
 
 ```kotlin
 private fun initWeatherView() {  
