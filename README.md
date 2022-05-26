@@ -1,4 +1,3 @@
-# Petmliy-Func-Explain
 
 # 3. 기능 구현
 ##   각 액티비티 기능 설명
@@ -147,7 +146,7 @@ override fun getWeatherInfo(
 }
 ```
 
-#### HomeFragment.kt에 날씨 띄우기
+#### HomeFragment.kt 날씨 띄우기
 
 ```kotlin
 private fun initWeatherView() {  
@@ -190,5 +189,80 @@ override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
     ''''
     initWeatherView()
     observeData() 
+}
+```
+## 동물 감정 분석
+
+앨범에서 고른 사진이나 카메라로 찍은 사진을 선택하여 해당 사진에 개, 고양이가 있다면 감정 분석 값을 받아볼 수 있다.
+개, 고양이가 있는 사진을 선택해 감정을 분석해볼 수 있다.
+* 사진을 앨범에서 고르거나 카메라로 찍어서 전송한다.
+* 로딩 시간이 흐른 후 결과를 받아온다.
+* 결과 값은 개, 고양이의 종과 화남, 행복, 슬픔의 감정을 퍼센트로 보내준다.
+
+(감정 분석 사진 추가)
+
+#### AnalysisFragment.kt
+
+앨범, 카메라 접근 권한이 있는지 확인한다.
+```kotlin
+private fun getPermissions() {  
+    if (ContextCompat.checkSelfPermission(  
+            requireContext(),  
+  Manifest.permission.CAMERA  
+  )  
+        != PackageManager.PERMISSION_GRANTED &&  
+        ContextCompat.checkSelfPermission(  
+            requireContext(),  
+  Manifest.permission.WRITE_EXTERNAL_STORAGE  
+  )  
+        != PackageManager.PERMISSION_GRANTED &&  
+        ContextCompat.checkSelfPermission(  
+            requireContext(),  
+  Manifest.permission.READ_EXTERNAL_STORAGE  
+  )  
+        != PackageManager.PERMISSION_GRANTED  
+  ) {  
+        ActivityCompat.requestPermissions(  
+            requireActivity(),  
+  PERMISSIONS,  
+  PERMISSIONS_REQUEST  
+  )  
+    }  
+}
+```
+
+앨범 또는 카메라를 선택한다. 
+다음 ResultFragment 에서 무엇을 선택했는지 알기 위해 navArgs을 이용한다.
+```kotlin
+override fun onViewCreated(view: View, savedInstanceState: Bundle?) {  
+    super.onViewCreated(view, savedInstanceState)  
+    getPermissions()  
+    binding.takePicture.setOnClickListener {  
+    var action = AnalysisFragmentDirections.actionAlbumFragmentToResultFragment(1) //앨범 선택 1
+    findNavController().navigate(action)  
+    } 
+    binding.selectPicture.setOnClickListener {  
+    var action = AnalysisFragmentDirections.actionAlbumFragmentToResultFragment(2) //카메라 선택 2
+    findNavController().navigate(action)  
+    }  
+}
+```
+
+#### ResultFragment.kt
+
+```kotlin
+```
+
+사진을 서버로 전송하기 위해 Retrofit을 이용한다.
+```kotlin
+override fun onViewCreated(view: View, savedInstanceState: Bundle?) {  
+    super.onViewCreated(view, savedInstanceState)  
+    var gson = GsonBuilder().setLenient().create()  
+    val retrofit = Retrofit.Builder()  
+        .baseUrl("http://ec2-54-180-166-236.ap-northeast-2.compute.amazonaws.com:8080/")  
+        .client(client)  
+        .addConverterFactory(GsonConverterFactory.create(gson))  
+        .build()  
+    analysisApi = retrofit.create(AnalysisService::class.java)  
 }
 ```
