@@ -28,10 +28,10 @@ Handler 를 이용해 2초의 딜레이 진행 뒤에야 MainActivity 화면으�
 
 ```kotlin
 Handler(Looper.getMainLooper()).postDelayed({  
-  val intent =  
-        Intent(baseContext, MainActivity::class.java)  
-    startActivity (intent)  
-    finish()  
+	val intent =  
+		Intent(baseContext, MainActivity::class.java)  
+	    startActivity (intent)  
+	    finish()  
     }, 2000)
 ```
 
@@ -46,7 +46,6 @@ bottomNavigationView.setOnItemSelectedListener { item ->
   val account = GoogleSignIn.getLastSignedInAccount(this)  
     if(account != null) {  
         when (item.itemId) {  
-  
             R.id.home -> navController.navigate(R.id.homeFragment)  
             R.id.story -> navController.navigate(R.id.postFragment)  
             R.id.walk -> navController.navigate(R.id.walkFragment)  
@@ -114,8 +113,8 @@ object WeatherAPIClient {
 @GET("data/2.5/{path}")  
 fun doGetJsonDataWeather(  
     @Path("path") path: String,  
-  @Query("q") q: String,  
-  @Query("appid") appid: String,  
+	@Query("q") q: String,  
+	@Query("appid") appid: String,  
 ): Call<WeatherModel>
 ```
 
@@ -123,17 +122,17 @@ fun doGetJsonDataWeather(
 ```kotlin
 override fun getWeatherInfo(  
     jsonObject: JSONObject,  
-  onResponse: (Response<WeatherModel>) -> Unit,  
-  onFailure: (Throwable) -> Unit  
-) {  
+	onResponse: (Response<WeatherModel>) -> Unit,  
+	onFailure: (Throwable) -> Unit  
+	) {  
     val APIService: WeatherAPIService = WeatherAPIClient.getClient(  
         jsonObject.get("url").toString()  
-    ).create(WeatherAPIService::class.java)  
-    APIService.doGetJsonDataWeather(  
-        jsonObject.get("path").toString(),  
-  jsonObject.get("q").toString(),  
-  jsonObject.get("appid").toString()  
-    ).enqueue(object :  
+		).create(WeatherAPIService::class.java)  
+		APIService.doGetJsonDataWeather(  
+	        jsonObject.get("path").toString(),  
+			jsonObject.get("q").toString(),  
+			jsonObject.get("appid").toString()  
+		).enqueue(object :  
         Callback<WeatherModel> {  
         override fun onResponse(call: Call<WeatherModel>, response: Response<WeatherModel>) {  
             onResponse(response)  
@@ -162,22 +161,22 @@ private fun initWeatherView() {
 private fun observeData() {  
     viewModel.isSuccWeather.observe(  
         viewLifecycleOwner, Observer { it ->  
-  if (it) {  
+			if (it) {  
                 viewModel.responseWeather.observe(  
                     viewLifecycleOwner, Observer { setWeatherData(it) }  
-  )  
-            }  
-        }  
-  )  
+                )  
+			}  
+		}  
+	)  
 }  
   
 private fun setWeatherData(model: WeatherModel) {  
     val temp = model.main.temp!!.toDouble() - 273.15  
-  val weatherImgUrl = "http://openweathermap.org/img/w/" + model.weather[0].icon + ".png"  
-  binding.currentTemp.text =  
+	val weatherImgUrl = "http://openweathermap.org/img/w/" + model.weather[0].icon + ".png"  
+	binding.currentTemp.text =  
         StringBuilder().append(String.format("%.2f", temp)).append(" 'C").toString()  
     binding.currentMain.text = model.weather[0].main  
- binding.windSpeed.text = StringBuilder().append(model.wind.speed).append(" m/s").toString()  
+	binding.windSpeed.text = StringBuilder().append(model.wind.speed).append(" m/s").toString()  
     binding.cloudCover.text = StringBuilder().append(model.clouds.all).append(" %").toString()  
     binding.humidity.text = StringBuilder().append(model.main.humidity).append(" %").toString()  
     Glide.with(this).load(weatherImgUrl).into(binding.weatherImg)  
@@ -193,8 +192,7 @@ override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
 ```
 ## 동물 감정 분석
 
-앨범에서 고른 사진이나 카메라로 찍은 사진을 선택하여 해당 사진에 개, 고양이가 있다면 감정 분석 값을 받아볼 수 있다.
-개, 고양이가 있는 사진을 선택해 감정을 분석해볼 수 있다.
+개, 고양이가 있는 사진을 선택하고 전송하여 감정 분석 값을 받아볼 수 있다.
 * 사진을 앨범에서 고르거나 카메라로 찍어서 전송한다.
 * 로딩 시간이 흐른 후 결과를 받아온다.
 * 결과 값은 개, 고양이의 종과 화남, 행복, 슬픔의 감정을 퍼센트로 보내준다.
@@ -207,31 +205,31 @@ override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
 ```kotlin
 private fun getPermissions() {  
     if (ContextCompat.checkSelfPermission(  
+	    requireContext(),  
+		Manifest.permission.CAMERA  
+	)  
+		!= PackageManager.PERMISSION_GRANTED &&  
+        ContextCompat.checkSelfPermission(  
             requireContext(),  
-  Manifest.permission.CAMERA  
-  )  
+			Manifest.permission.WRITE_EXTERNAL_STORAGE  
+	)  
         != PackageManager.PERMISSION_GRANTED &&  
         ContextCompat.checkSelfPermission(  
             requireContext(),  
-  Manifest.permission.WRITE_EXTERNAL_STORAGE  
-  )  
-        != PackageManager.PERMISSION_GRANTED &&  
-        ContextCompat.checkSelfPermission(  
-            requireContext(),  
-  Manifest.permission.READ_EXTERNAL_STORAGE  
-  )  
+			Manifest.permission.READ_EXTERNAL_STORAGE  
+	)  
         != PackageManager.PERMISSION_GRANTED  
   ) {  
         ActivityCompat.requestPermissions(  
             requireActivity(),  
-  PERMISSIONS,  
-  PERMISSIONS_REQUEST  
-  )  
+			PERMISSIONS,  
+			PERMISSIONS_REQUEST  
+		)  
     }  
 }
 ```
 
-앨범 또는 카메라를 선택한다.
+앨범 또는 카메라를 선택한다. 
 다음 ResultFragment 에서 무엇을 선택했는지 알기 위해 navArgs을 이용한다.
 ```kotlin
 override fun onViewCreated(view: View, savedInstanceState: Bundle?) {  
@@ -250,13 +248,12 @@ override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
 
 #### ResultFragment.kt
 
-```kotlin
-```
-
 사진을 서버로 전송하기 위해 Retrofit을 이용한다.
 ```kotlin
 override fun onViewCreated(view: View, savedInstanceState: Bundle?) {  
     super.onViewCreated(view, savedInstanceState)  
+    val analyArgs by navArgs<ResultFragmentArgs>()  
+	val seletNum: Int = analyArgs.selectNum
     var gson = GsonBuilder().setLenient().create()  
     val retrofit = Retrofit.Builder()  
         .baseUrl("http://ec2-54-180-166-236.ap-northeast-2.compute.amazonaws.com:8080/")  
@@ -264,5 +261,279 @@ override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         .addConverterFactory(GsonConverterFactory.create(gson))  
         .build()  
     analysisApi = retrofit.create(AnalysisService::class.java)  
+    if (seletNum == 1) {  
+	    openCamera()  
+	} else {  
+	    openGallery()  
+	}
 }
 ```
+감정 분석 리턴 값을 생성한다.
+```kotlin
+class AnalysisResult(  
+    val type: String, val cropPosition: CropPosition, val breed: Breed, val emotion: Emotion  
+)
+class CropPosition(  
+    val leftX: Int, val leftY: Int, val rightX: Int, val rightY: Int  
+)  
+class Emotion(  
+    val angry: Float, val sad: Float, val happy: Float  
+)  
+class Breed(  
+    val top1: String, val top1_result: Float  
+)
+```
+감정 분석 Retrofit Api을 생성한다.
+```kotlin
+interface AnalysisService {  
+	@Multipart  
+	@POST("api/analysis/emotion")  
+    fun getEmotion(  
+        @Part img: MultipartBody.Part  
+    ): Call<AnalysisResult>  
+}
+```
+앨범을 열어 사진을 선택 후 전송한다.
+```kotlin
+private val imagePickerLauncher =  
+    registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {  
+		val petImageUri = it.data?.data  
+		Glide.with(this).load(petImageUri).centerCrop().into(binding.petImg)  
+	    petImageUri?.let { it1 -> getEmotion(it1) }  
+	    }
+	    
+private fun openGallery() {  
+    imagePickerLauncher.launch(  
+      Intent.createChooser(Intent(Intent.ACTION_GET_CONTENT).apply {  
+	  type = "image/*"  
+	  }, "사진 선택하기")  
+    )  
+}
+```
+카메라로 사진을 찍고 전송한다.
+```kotlin
+private fun openCamera() {  
+    var petImageUri: Uri? = null  
+	resultLauncher =  
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {  
+	        if (it.resultCode == RESULT_OK) {  
+                val option = BitmapFactory.Options()  
+                option.inSampleSize = 10  
+                val bitmap = BitmapFactory.decodeFile(filePath, option)  
+                Glide.with(this).load(petImageUri).centerCrop().into(binding.petImg)  
+                petImageUri?.let { it1 -> getEmotion(it1) }  
+                }  
+             }  
+	val filename = "${System.currentTimeMillis()}.jpeg"  
+	val storageDir: File? =  
+        (activity as MainActivity).getExternalFilesDir(Environment.DIRECTORY_PICTURES)  
+  
+    val file = File.createTempFile(filename, ".jpeg", storageDir)  
+    filePath = file.absolutePath  
+    petImageUri = FileProvider.getUriForFile(  
+        activity as MainActivity,  
+		"com.bagooni.petmliy_android_app",  
+		file  
+	)  
+    val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)  
+    intent.putExtra(MediaStore.EXTRA_OUTPUT, petImageUri)  
+    resultLauncher.launch(intent)  
+}
+```
+서버로 사진을 post하고 감정 분석을 받아온다.
+```kotlin
+private fun getEmotion(petImgUri: Uri) {  
+        val bitmap = petImgUri?.let { it1 -> loadBitmapFromMediaStoreBy(it1) }  
+        val uploadFile = bitmapToRequestBody("img", bitmap)  
+        val loading = LoadingDialog(activity as MainActivity)  
+        loading.show()  
+  
+        analysisApi.getEmotion(uploadFile).enqueue(object : Callback<AnalysisResult> {  
+            override fun onResponse(  
+                call: Call<AnalysisResult>,  
+                response: Response<AnalysisResult>  
+            ) {  
+                if (response.isSuccessful) {  
+                    Log.d("response",response.body().toString())  
+                    val result = response.body()  
+                    result?.let { updateUI(it) }  
+                    loading.dismiss()
+                    }else{  
+                    Toast.makeText(activity as MainActivity,"동물 사진이 아닙니다.",
+                    Toast.LENGTH_SHORT).show()  
+                    findNavController().navigate(R.id.albumFragment)  
+                    loading.dismiss()  
+                }  
+            }  
+            override fun onFailure(call: Call<AnalysisResult>, t: Throwable) {  
+                Log.d("onFailure",t.message.toString())  
+                Toast.makeText(activity as MainActivity,"동물 사진이 아닙니다.", Toast.LENGTH_SHORT).show()  
+                findNavController().navigate(R.id.albumFragment)  
+                loading.dismiss()  
+            }  
+        })  
+    }
+``` 
+받아온 감정 분석 정보를 화면 UI에 업데이트한다.
+```kotlin
+private fun updateUI(result: AnalysisResult){  
+    binding.petType.text = result.type  
+    binding.petBreed.text = StringBuilder().append(result.breed.top1)  
+        .append("(")  
+        .append(String.format("%.2f", result.breed.top1_result))  
+        .append("%)")  
+  
+    var emotionMap = HashMap<String, Float>()  
+    emotionMap["Angry"] = result.emotion.angry  
+    emotionMap["Happy"] = result.emotion.happy  
+    emotionMap["Sad"] = result.emotion.sad  
+
+	val maxValue = Collections.max(emotionMap.values)
+	//퍼센트 값이 가장 큰 감정 찾기 
+    emotionMap.entries.stream().forEach { entry ->  
+		if (entry.value == maxValue) {  
+            binding.petEmotion.text = StringBuilder().append(entry.key)  
+                .append("(").append(entry.value).append(")")  
+        }  
+    } 
+	binding.petEmotionSet.text = StringBuilder()  
+        .append("Angry(").append(emotionMap["Angry"]).append("%) ")  
+        .append("Happy(").append(emotionMap["Happy"]).append("%) ")  
+        .append("Sad(").append(emotionMap["Sad"]).append("%)")  
+}
+```
+## 커뮤니티
+자신의 반려 동물 사진을 올리고 여러 사람들과 소통하며 공유할 수 있다.
+* 강아지, 고양이 사진만 업로드할 수 있다.
+* 자동으로 태그를 달아준다. (종 분류, 감정 분석)
+* 게시글마다 좋아요, 댓글, 공유를 할 수 있다.
+* 자신이 '좋아요'한 게시물을 모아볼 수 있다.
+
+(커뮤니티 사진 추가)
+### 게시물 가져오기
+#### PostFragment.kt
+게시물을 받아오기 위해 Retrofit을 이용한다.
+```kotlin
+override fun onViewCreated(view: View, savedInstanceState: Bundle?) {  
+    super.onViewCreated(view, savedInstanceState)
+    val feedListView = view.findViewById<RecyclerView>(R.id.feedList)  
+	var gson = GsonBuilder().setLenient().create()  
+    val retrofit = Retrofit.Builder()  
+        .baseUrl("http://ec2-54-180-166-236.ap-northeast-2.compute.amazonaws.com:8080/")  
+        .client(client)  
+        .addConverterFactory(GsonConverterFactory.create(gson))  
+        .build()  
+    retrofitService = retrofit.create(RetrofitService::class.java)
+```
+게시물 받아오는 데이터 모델과 인터페이스를 생성한다.
+```kotlin
+class Post(  
+    val postId: Long, val userImg: String, val email: String, val postImg: String,  
+    val postContent: String, val tags: String  
+)
+interface RetrofitService {   
+    //포스트 가져오기  
+  @GET("api/post/findAll")  
+    fun getPost(  
+    ): Call<ArrayList<Post>>   
+}
+```
+게시글은 RecyclerView와 Adapter로 구성한다.
+```kotlin
+class PostRecyclerViewAdapter(  
+    val postList: ArrayList<Post>,  
+	val inflater: LayoutInflater,  
+	val glide: RequestManager,  
+	val postFragment: PostFragment,  
+	val activity: MainActivity,  
+	val shareButton: (String) -> Unit  
+) : RecyclerView.Adapter<PostRecyclerViewAdapter.ViewHolder>() {
+
+	inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {  
+	    val userImg: ImageView  
+	    val userName: TextView
+	    ...
+	    init {  //itemView와 연결
+		    userImg = itemView.findViewById(R.id.userImg)  
+		    userName = itemView.findViewById(R.id.userEmail)
+		    ...
+		}
+	}
+	override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {  
+	    return ViewHolder(inflater.inflate(R.layout.post_recyclerview_item, parent, false))  
+    }
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) {  
+	    val post = postList[position]
+	    ...
+	}
+}
+```
+인터페이스 getPost 함수를 이용해 서버에서 게시글을 받아온다.
+```kotlin
+private fun getPost() {  
+    val loading = LoadingDialog(activity as MainActivity)  
+    loading.show()  
+    retrofitService.getPost().enqueue(object : Callback<ArrayList<Post>> {  
+        override fun onResponse(  
+            call: Call<ArrayList<Post>>,  
+			response: Response<ArrayList<Post>>  
+        ) {  
+            val postList = response.body()  
+            val postRecyclerView = view?.findViewById<RecyclerView>(R.id.feedList)  
+            postRecyclerView?.adapter = postList?.let {  PostRecyclerViewAdapter(  
+                    it,  
+                    LayoutInflater.from(activity),  
+                    Glide.with(activity!!),  
+                    this@PostFragment,  
+                    activity as (MainActivity),  
+                    shareButton = {
+                        val bytes = Base64.decode(it, Base64.DEFAULT)  
+                        val changeImg = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)  
+                        bitmapToUri(changeImg)  
+                    }  
+	             )  
+             }  
+        }  
+  
+        override fun onFailure(call: Call<ArrayList<Post>>, t: Throwable) {  
+            Log.d("log", t.message.toString())  
+        }  
+    })  
+}
+```
+Retrofit 응답 객체(Response<ArrayList<Post>>)를 받고 adapter로 item과 각각 연결한다.
+```kotlin
+override fun onBindViewHolder(holder: ViewHolder, position: Int) {  
+    val post = postList[position]  
+  
+    post.userImg.let {  glide.load(it).centerCrop().circleCrop().into(holder.userImg) }  
+  
+	if (post.postImg.isNotEmpty()) {  
+        val byte = Base64.decode(post.postImg, Base64.DEFAULT)  
+        val img: Bitmap = BitmapFactory.decodeByteArray(byte, 0, byte.size)  
+        holder.postImg.setImageBitmap(img)  
+    }  
+    holder.postUserName.text = post.email.split("@")[0]  
+    holder.userName.text = post.email.split("@")[0]  
+    holder.postContent.text = post.postContent  
+    //자동 태그
+    ("#" + post.tags.replace(", ", " #")).also { holder.tagText.text = it }  
+  
+	if (post.email == postFragment.personEmailInput) {  
+        holder.deleteBtn.visibility = VISIBLE  
+	}  
+}
+```
+### 게시물 작성
+
+### 좋아요
+게시물을 구경하다 마음에 드는 게시물에 '좋아요'로 공감할 수 있다.
+* 좋아요 누른 게시물은 분홍색 하트로 표현되고 누르지 않은 게시물은 투명 하트로 표시한다.
+* 몇 명이 '좋아요'를 눌렀는지 표시한다.
+* 하트 버튼을 누름으로써 '좋아요' 또는 '좋아요'를 취소할 수 있다.
+* '좋아요' 한 게시물 모아보기
+#### PostLikeFragment.kt
+
+### 댓글
+게시물에 직접 댓글을 달아 글 쓴 사람과 소통할 수 있다.
+#### 
