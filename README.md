@@ -525,6 +525,9 @@ override fun onBindViewHolder(holder: ViewHolder, position: Int) {
 }
 ```
 ### 게시물 작성
+자신의 반려 동물 사진을 올려 다른 사람들과 공유할 수 있다.
+* 개, 고양이가 없는 사진은 업로드할 수 없다.
+#### PostUploadFragment.kt
 
 ### 좋아요
 게시물을 구경하다 마음에 드는 게시물에 '좋아요'로 공감할 수 있다.
@@ -535,5 +538,28 @@ override fun onBindViewHolder(holder: ViewHolder, position: Int) {
 #### PostLikeFragment.kt
 
 ### 댓글
-게시물에 직접 댓글을 달아 글 쓴 사람과 소통할 수 있다.
-#### 
+게시물에 댓글을 달아 글 쓴 사람과 직접 소통할 수 있다.
+#### CommentFragment.kt
+
+## 산책
+산책 기록을 저장하고 날짜 별로 확인할 수 있다.
+* 실시간으로 산책하는 위치를 지도로 볼 수 있고 경로를 추적하여 저장한다.
+* 날짜 별로 산책 기록을 확인, 삭제, 공유가 가능하다
+
+### 산책 저장 확인
+#### WalkFragment.kt
+#### DetailTrackingFragment.kt
+
+### 실시간 산책 기록
+#### TrackingFragment.kt
+
+## 장소
+지도에서 장소를 추천하고 즐겨 찾기 추가 및 공유가 가능하다.
+* 키워드로 검색하여 장소를 추천 받는다.
+* 나만의 장소를 즐겨찾기로 관리한다.
+
+### 장소 검색
+#### MapFragment.kt
+
+### 즐겨찾기
+#### LikePlaceFragment.kt
