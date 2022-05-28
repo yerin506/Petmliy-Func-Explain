@@ -412,7 +412,7 @@ private fun updateUI(result: AnalysisResult){
 (커뮤니티 사진 추가)
 ### 게시물 가져오기
 #### PostFragment.kt
-게시물을 받아오기 위해 Retrofit을 이용한다.
+게시물을 서버로부터 받아오기 위해 Retrofit을 이용한다.
 ```kotlin
 override fun onViewCreated(view: View, savedInstanceState: Bundle?) {  
     super.onViewCreated(view, savedInstanceState)
@@ -425,6 +425,7 @@ override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         .build()  
     retrofitService = retrofit.create(RetrofitService::class.java)
 ```
+#### RetrofitService
 게시물 받아오는 데이터 모델과 인터페이스를 생성한다.
 ```kotlin
 class Post(  
@@ -468,6 +469,7 @@ class PostRecyclerViewAdapter(
 	}
 }
 ```
+#### 게시물 가져오기 getPost
 인터페이스 getPost 함수를 이용해 서버에서 게시글을 받아온다.
 ```kotlin
 private fun getPost() {  
@@ -501,7 +503,7 @@ private fun getPost() {
     })  
 }
 ```
-Retrofit 응답 객체(Response<ArrayList<Post>>)를 받고 adapter로 item과 각각 연결한다.
+Retrofit 응답 객체(Response<ArrayList<Post>>)를 받고 adapter로 RecyclerView에 item과 각각 연결한다.
 ```kotlin
 override fun onBindViewHolder(holder: ViewHolder, position: Int) {  
     val post = postList[position]  
@@ -528,6 +530,60 @@ override fun onBindViewHolder(holder: ViewHolder, position: Int) {
 자신의 반려 동물 사진을 올려 다른 사람들과 공유할 수 있다.
 * 개, 고양이가 없는 사진은 업로드할 수 없다.
 #### PostUploadFragment.kt
+앨범 속 사진이나 카메라로 찍은 사진과 짧을 글을 써서 게시글을 작성하는 화면이다.
+* 감정 분석에 있는 imagePickerLauncher, cameraLauncher을 사용해서 사진을 선택한 후 똑같이 RequestBody로 바꾼다.
+#### postUpload
+게시글 내용을 서버에 전송하는 함수이다.
+개, 고양이 사진이 없는 경우 Toast 실패 메세지를 출력하고 전송에 성공하면 Toast 성공 메세지 출력 후 포스트 화면으로 이동한다.
+```kotlin
+private fun postUpload(postImageUri: Uri) {  
+    var gson = GsonBuilder().setLenient().create()  
+    val retrofit = Retrofit.Builder()  
+        .baseUrl("http://ec2-54-180-166-236.ap-northeast-2.compute.amazonaws.com:8080/")  
+        .client(client)  
+        .addConverterFactory(GsonConverterFactory.create(gson))  
+        .build()  
+    val retrofitService = retrofit.create(RetrofitService::class.java)  
+  
+    //입력문구 얻어옴  
+	contentInput = binding.postContent.text.toString()
+	//로딩화면
+    val loading = LoadingDialog(activity as MainActivity)  
+    loading.show()
+    //게시글 내용
+    val postContent = MultipartBody.Part.createFormData("postContent", contentInput)
+    //유저 이미지
+    val userUploadFile = MultipartBody.Part.createFormData("userImg", userImgUri)  
+    //게시글 사진을 비트맵으로 변환
+    val bitmap = postImageUri?.let { it1 -> loadBitmapFromMediaStoreBy(it1) }
+    //비트맵으로 변환한 사진을 requestBody로 변환 
+    val uploadFile = bitmapToRequestBody("postImg", bitmap)  
+  
+    if (uploadFile != null) {  
+        retrofitService.postUpload(personEmailInput, uploadFile, postContent, userUploadFile)  
+            .enqueue(object : Callback<Post> {  
+                override fun onResponse(call: Call<Post>, response: Response<Post>) {  
+                    if (response.isSuccessful) {
+                        Log.d("log", response.toString())  
+                    } else {
+	                    //개, 고양이 사진이 아닐 경우 
+                        Toast.makeText(  
+                            activity as MainActivity, "동물 사진이 아닙니다.", Toast.LENGTH_SHORT).show()  
+                        findNavController().navigate(R.id.postUploadFragment)  
+                        loading.dismiss()  //로딩화면 멈추기
+                    }  
+                }  
+                override fun onFailure(call: Call<Post>, t: Throwable) { 
+                    Toast.makeText(activity as MainActivity, "포스트 업로드했습니다.", Toast.LENGTH_SHORT)  
+                        .show()  
+                    findNavController().navigate(R.id.postFragment)  
+                    loading.dismiss()  
+                }  
+            })  
+    }  
+  
+}
+```
 
 ### 좋아요
 게시물을 구경하다 마음에 드는 게시물에 '좋아요'로 공감할 수 있다.
@@ -536,6 +592,152 @@ override fun onBindViewHolder(holder: ViewHolder, position: Int) {
 * 하트 버튼을 누름으로써 '좋아요' 또는 '좋아요'를 취소할 수 있다.
 * '좋아요' 한 게시물 모아보기
 #### PostLikeFragment.kt
+* 모든 게시물은 원래 투명 하트로 표시하고 클릭 시 분홍 하트로 바뀌고 이미지 위에 하얀 하트가 1초 동안 보일 수 있도록 한다.
+* 바로 화면을 바꾸고 순서대로 진행하기 위해 쓰레드를 이용한다.
+```kotlin
+class PostRecyclerViewAdapter(  
+    val postList: ArrayList<Post>, 
+    ...
+) : RecyclerView.Adapter<PostRecyclerViewAdapter.ViewHolder>() {  
+  
+    inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {  
+        ... 
+        val favoriteBtn: ImageButton  
+        val favoriteColorBtn: ImageButton  
+        ...
+  
+        init {  
+            ...
+            favoriteBtn = itemView.findViewById(R.id.favoriteBtn) //좋아요 버튼  
+			favoriteColorBtn = itemView.findViewById(R.id.favoriteColorBtn) //좋아요 색 버튼  
+            postLayer = itemView.findViewById(R.id.postLayer)  //사진 하얀 배경  
+			postHeart = itemView.findViewById(R.id.postHeart)  //사진 위 하얀 하트
+            countLike = itemView.findViewById(R.id.likeCount)  //좋아요 개수 
+            ...
+  
+            favoriteBtn.setOnClickListener {  
+				Thread {  
+					postFragment.postLike(postList[adapterPosition].postId)  
+					activity.runOnUiThread {  
+	                    favoriteColorBtn.visibility = VISIBLE  //분홍 하트 표시
+	                    postLayer.visibility = VISIBLE  
+	                    postHeart.visibility = VISIBLE  
+	                }  
+					Thread.sleep(1000)  //1초간 쉼
+					activity.runOnUiThread { 
+	                    postLayer.visibility = INVISIBLE  
+	                    postHeart.visibility = INVISIBLE  
+	                    postFragment.getCountLike(postList[adapterPosition].postId, countLike)  //좋아요 개수 업데이트
+	                }  
+	            }.start()  
+			}  
+  
+			favoriteColorBtn.setOnClickListener {  
+				Thread {  
+					activity.runOnUiThread {  
+					postFragment.deleteData(postList[adapterPosition].postId)  //좋아요 취소
+					favoriteColorBtn.visibility = INVISIBLE  
+					}  
+					Thread.sleep(1000)  
+                    activity.runOnUiThread {  
+                    postFragment.getCountLike(postList[adapterPosition].postId, countLike) //좋아요 개수 업데이트 
+                    }  
+                }.start()  
+			}  
+		}  
+	}
+```
+#### LikeRetrofitService
+```kotlin
+class Like(  
+    val postId: Long, val userImg: String  
+)  
+  
+interface LikeRetrofitService {  
+    @POST("api/like/save")  
+    fun postLike(  
+        @Header("email") email: String,  
+		@Query("postId") postId: Long,  
+		@Query("userImg") userImg: String  
+    ): Call<Like>  
+  
+    @DELETE("api/like/delete/{postId}")  
+    fun deleteLike(  
+        @Header("email") email: String,  
+		@Path("postId") postId: Long  
+    ): Call<Void>  
+  
+    @GET("api/like/aboutMyLike/{postId}")  
+    fun aboutLike(  
+        @Header("email") email: String,  
+		@Path("postId") postId: Long  
+    ): Call<Int>  
+  
+    @GET("api/like/count/{postId}")  
+    fun countLike(  
+        @Path("postId") postId: Long  
+    ): Call<Int>  
+}
+```
+#### 좋아요 표시 postLike
+```kotlin
+private fun postLike(postId: Long) {  
+    likeRetrofitService.postLike(personEmailInput, postId, userImgUri)  
+        .enqueue(object : Callback<Like> {  
+            override fun onResponse(call: Call<Like>, response: Response<Like>) {  
+            }  
+            override fun onFailure(call: Call<Like>, t: Throwable) {  
+            }
+        })  
+}
+```
+#### 좋아요 삭제 deleteData
+```kotlin
+private fun deleteData(postId: Long) {  
+    likeRetrofitService.deleteLike(personEmailInput, postId).enqueue(object : Callback<Void> {  
+        override fun onResponse(call: Call<Void>, response: Response<Void>) {  
+        }  
+        override fun onFailure(call: Call<Void>, t: Throwable) {  
+            Log.d("log", t.message.toString())  
+        }  
+    })  
+}
+```
+#### 좋아요 개수 getCountLike
+```kotlin
+private fun getCountLike(postId: Long, textView: TextView) {  
+    likeRetrofitService.countLike(postId).enqueue(object : Callback<Int> {  
+        override fun onResponse(call: Call<Int>, response: Response<Int>) {  
+            ("좋아요 " + response.body().toString() + "개").also { textView.text = it }  
+        } 
+        override fun onFailure(call: Call<Int>, t: Throwable) {  
+        }  
+    })  
+}
+```
+#### 좋아요 했는지 확인 aboutLike
+```kotlin
+override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+    ...
+    postFragment.likeRetrofitService.aboutLike(postFragment.personEmailInput, post.postId)  
+    .enqueue(object : Callback<Int> {  
+        override fun onResponse(call: Call<Int>, response: Response<Int>) {  
+            Log.d("getPostLike", response.body().toString())  
+            if (response.body() == 1) {  //좋아요 했을 경우 1 리턴
+                holder.favoriteColorBtn.visibility = VISIBLE  
+            } else {  
+                holder.favoriteColorBtn.visibility = INVISIBLE  
+                }  
+        }  
+        override fun onFailure(call: Call<Int>, t: Throwable) {  
+        }  
+    })
+}
+```
+
+### 좋아요 모아보기
+#### PostUploadFragment.kt
+PostFragment에서 '좋아요'한 게시물만 모아보도록 한다.
 
 ### 댓글
 게시물에 댓글을 달아 글 쓴 사람과 직접 소통할 수 있다.
